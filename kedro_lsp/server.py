@@ -3,11 +3,8 @@ import re
 from typing import List, Optional
 
 import yaml
-from kedro.framework.startup import _get_project_metadata, ProjectMetadata
-from pygls.lsp.methods import (
-    DEFINITION,
-    WORKSPACE_DID_CHANGE_CONFIGURATION,
-)
+from kedro.framework.startup import ProjectMetadata, _get_project_metadata
+from pygls.lsp.methods import DEFINITION, WORKSPACE_DID_CHANGE_CONFIGURATION
 from pygls.lsp.types import (
     DidChangeConfigurationParams,
     InitializeParams,
@@ -21,9 +18,10 @@ from pygls.protocol import LanguageServerProtocol
 from pygls.server import LanguageServer
 from pygls.workspace import Document
 from yaml.loader import SafeLoader
+from yaml.composer import Composer
 
-RE_START_WORD = re.compile("[A-Za-z_0-9]*$")
-RE_END_WORD = re.compile("^[A-Za-z_0-9]*")
+RE_START_WORD = re.compile("[A-Za-z_0-9:]*$")
+RE_END_WORD = re.compile("^[A-Za-z_0-9:]*")
 
 
 class KedroLanguageServerProtocol(LanguageServerProtocol):
@@ -38,7 +36,7 @@ class KedroLanguageServerProtocol(LanguageServerProtocol):
         except RuntimeError:
             project_metadata = None
         finally:
-            server.project_metadta = project_metadata
+            server.project_metadata = project_metadata
         return res
 
 
@@ -97,6 +95,8 @@ def _get_param_location(project_metadata: ProjectMetadata, word: str) -> Optiona
     param = word.split("params:")[-1]
     parameters_path = project_metadata.project_path / "conf" / "base" / "parameters.yml"
     parameters_conf = yaml.load(parameters_path.read_text(), Loader=SafeLineLoader)
+    print(parameters_conf)
+    print(param)
 
     if param not in parameters_conf:
         return None

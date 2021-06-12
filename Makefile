@@ -1,3 +1,4 @@
 lint:
-	black --line-length=120 kedro_lsp
+	isort kedro_lsp
+	black kedro_lsp
 	pylint -j 0 kedro_lsp

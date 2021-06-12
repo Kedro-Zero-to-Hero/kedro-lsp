@@ -3,7 +3,28 @@ name = "kedro-lsp"
 version = "0.1.0"
 description = "Kedro Language Server"
 authors = ["Lim Hoang <limdauto@gmail.com>"]
+readme = "README.md"
+homepage = "https://github.com/Kedro-Zero-to-Hero/kedro-lsp"
+repository = "https://github.com/Kedro-Zero-to-Hero/kedro-lsp"
+keywords = ["python", "kedro", "lsp", "language-server-protocol"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Editors :: Integrated Development Environments (IDE)",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+include = ["README.md"]
 license = "MIT"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
 
 [tool.poetry.dependencies]
 python = ">=3.6.2,<3.9"
@@ -11,8 +32,12 @@ kedro = "^0.17.3"
 pygls = "^0.10.3"
 
 [tool.poetry.dev-dependencies]
+isort = "^5.8.0"
 pylint = "^2.8.3"
 black = "^21.6b0"
+
+[tool.poetry.scripts]
+kedro-lsp = 'kedro_lsp.cli:cli'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
