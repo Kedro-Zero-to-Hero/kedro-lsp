@@ -94,20 +94,24 @@ def _word_at_position(position: Position, document: Document) -> str:
 def _get_param_location(project_metadata: ProjectMetadata, word: str) -> Optional[Location]:
     param = word.split("params:")[-1]
     parameters_path = project_metadata.project_path / "conf" / "base" / "parameters.yml"
-    parameters_conf = yaml.load(parameters_path.read_text(), Loader=SafeLineLoader)
-    print(parameters_conf)
-    print(param)
+    # TODO: cache -- we shouldn't have to re-read the file on every request
+    parameters_file = open(parameters_path, "r")
+    param_line_no = None
+    for line_no, line in enumerate(parameters_file, 1):
+        if line.startswith(param):
+            param_line_no = line_no
+            break
+    parameters_file.close()
 
-    if param not in parameters_conf:
-        return None
+    if param_line_no is None:
+        return
 
-    line = parameters_conf[param]["__line__"]
     location = Location(
         uri=f"file://{parameters_path}",
         range=Range(
-            start=Position(line=line - 1, character=0),
+            start=Position(line=param_line_no - 1, character=0),
             end=Position(
-                line=line,
+                line=param_line_no,
                 character=0,
             ),
         ),
