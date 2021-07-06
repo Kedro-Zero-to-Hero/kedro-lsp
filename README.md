@@ -79,6 +79,14 @@ EOF
 
 > 🗒️ Note, you must have the `kedro-lsp` installed and on your `PATH`
 
+There are a number of plugins that will help setup lsp functionality in nvim, but if you want a bare minimum go-to-definition add this to your `.vimrc` as well.
+
+``` vim
+nnoremap <leader>n <cmd>lua vim.lsp.buf.definition()<CR>
+```
+
+If you are having any issues with `kedro-lsp` not working in nvim try running `:LspInfo` or looking into your `~/.cache/nvim/lsp.log` file.
+
 ## Todos
 
 * [ ] Provide diagnostic when there is a typo in dataset or parameter name in the pipeline.
