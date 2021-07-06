@@ -52,6 +52,33 @@ To use it with visual studio code, install the Kedro extension from Visual Studi
 
 TBD
 
+### nvim
+
+To use it with nvim, install [lspconfig](https://github.com/neovim/nvim-lspconfig).
+```
+:Plug 'neovim/nvim-lspconfig'
+```
+
+Then add the following config to your vimrc.
+
+``` vim
+lua <<EOF
+local configs = require 'lspconfig/configs'
+
+configs.kedro = {
+    default_config = {
+        cmd = {"kedro-lsp"};
+        filetypes = {"python"};
+        root_dir = function(fname)
+            return vim.fn.getcwd()
+        end;
+    };
+};
+EOF
+```
+
+> 🗒️ Note, you must have the `kedro-lsp` installed and on your `PATH`
+
 ## Todos
 
 * [ ] Provide diagnostic when there is a typo in dataset or parameter name in the pipeline.
