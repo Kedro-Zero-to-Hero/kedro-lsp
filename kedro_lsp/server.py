@@ -1,8 +1,12 @@
 """Kedro Language Server."""
 import re
+from pathlib import Path
 from typing import List, Optional
 
 import yaml
+from kedro.framework.project import configure_project
+from kedro.framework.session import KedroSession
+from kedro.framework.session.session import _activate_session
 from kedro.framework.startup import ProjectMetadata, _get_project_metadata
 from pygls.lsp.methods import DEFINITION, WORKSPACE_DID_CHANGE_CONFIGURATION
 from pygls.lsp.types import (
@@ -18,10 +22,24 @@ from pygls.protocol import LanguageServerProtocol
 from pygls.server import LanguageServer
 from pygls.workspace import Document
 from yaml.loader import SafeLoader
-from yaml.composer import Composer
 
 RE_START_WORD = re.compile("[A-Za-z_0-9:]*$")
 RE_END_WORD = re.compile("^[A-Za-z_0-9:]*")
+
+
+def get_conf_paths(project_metadata):
+    """
+    Get conf paths using the default kedro patterns, and the CONF_ROOT
+    directory set in the projects settings.py
+    """
+    configure_project(project_metadata.package_name)
+    session = KedroSession.create(project_metadata.package_name)
+    _activate_session(session, force=True)
+    context = session.load_context()
+    pats = ("catalog*", "catalog*/**", "**/catalog*")
+
+    conf_paths = context.config_loader._lookup_config_filepaths(Path(context.config_loader.conf_paths[0]), pats, set())
+    return conf_paths
 
 
 class KedroLanguageServerProtocol(LanguageServerProtocol):
@@ -135,20 +153,23 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
         if param_location:
             return [param_location]
 
-    catalog_path = server.project_metadata.project_path / "conf" / "base" / "catalog.yml"
-    catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
-    if word in catalog_conf:
-        line = catalog_conf[word]["__line__"]
-        location = Location(
-            uri=f"file://{catalog_path}",
-            range=Range(
-                start=Position(line=line - 1, character=0),
-                end=Position(
-                    line=line,
-                    character=0,
+    catalog_paths = get_conf_paths(server.project_metadata)
+
+    for catalog_path in catalog_paths:
+        catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
+
+        if word in catalog_conf:
+            line = catalog_conf[word]["__line__"]
+            location = Location(
+                uri=f"file://{catalog_path}",
+                range=Range(
+                    start=Position(line=line - 1, character=0),
+                    end=Position(
+                        line=line,
+                        character=0,
+                    ),
                 ),
-            ),
-        )
-        return [location]
+            )
+            return [location]
 
     return None
