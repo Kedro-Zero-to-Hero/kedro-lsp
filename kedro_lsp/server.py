@@ -3,7 +3,9 @@ import re
 from typing import List, Optional
 
 import yaml
-from kedro.framework.startup import ProjectMetadata, _get_project_metadata
+from kedro.config.config import _path_lookup
+from kedro.framework.startup import ProjectMetadata, bootstrap_project
+from kedro.framework.project import _ProjectSettings, settings
 from pygls.lsp.methods import DEFINITION, WORKSPACE_DID_CHANGE_CONFIGURATION
 from pygls.lsp.types import (
     DidChangeConfigurationParams,
@@ -18,7 +20,6 @@ from pygls.protocol import LanguageServerProtocol
 from pygls.server import LanguageServer
 from pygls.workspace import Document
 from yaml.loader import SafeLoader
-from yaml.composer import Composer
 
 RE_START_WORD = re.compile("[A-Za-z_0-9:]*$")
 RE_END_WORD = re.compile("^[A-Za-z_0-9:]*")
@@ -32,11 +33,12 @@ class KedroLanguageServerProtocol(LanguageServerProtocol):
         server: KedroLanguageServer = self._server
         res = super().bf_initialize(params)
         try:
-            project_metadata = _get_project_metadata(server.workspace.root_path)
+            project_metadata = bootstrap_project(server.workspace.root_path)
         except RuntimeError:
             project_metadata = None
         finally:
             server.project_metadata = project_metadata
+            server.project_settings = settings
         return res
 
 
@@ -44,6 +46,7 @@ class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
 
     project_metadata: Optional[ProjectMetadata]
+    project_settings: Optional[_ProjectSettings]
 
     def is_kedro_project(self) -> bool:
         """Returns whether the current workspace is a kedro project."""
@@ -135,20 +138,26 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
         if param_location:
             return [param_location]
 
-    catalog_path = server.project_metadata.project_path / "conf" / "base" / "catalog.yml"
-    catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
-    if word in catalog_conf:
-        line = catalog_conf[word]["__line__"]
-        location = Location(
-            uri=f"file://{catalog_path}",
-            range=Range(
-                start=Position(line=line - 1, character=0),
-                end=Position(
-                    line=line,
-                    character=0,
-                ),
-            ),
-        )
-        return [location]
+    catalog_paths = _path_lookup(
+        conf_path=server.project_metadata.project_path / server.project_settings.CONF_ROOT,
+        patterns=["catalog*", "catalog*/**", "**/catalog*"]
+    )
+    locations = []
 
-    return None
+    for catalog_path in catalog_paths:
+        catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
+        if word in catalog_conf:
+            line = catalog_conf[word]["__line__"]
+            location = Location(
+                uri=f"file://{catalog_path}",
+                range=Range(
+                    start=Position(line=line - 1, character=0),
+                    end=Position(
+                        line=line,
+                        character=0,
+                    ),
+                ),
+            )
+            locations.append(location)
+
+    return locations if locations else None
