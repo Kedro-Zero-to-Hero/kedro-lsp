@@ -142,8 +142,6 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
         conf_path=server.project_metadata.project_path / server.project_settings.CONF_ROOT,
         patterns=["catalog*", "catalog*/**", "**/catalog*"]
     )
-    locations = []
-
     for catalog_path in catalog_paths:
         catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
         if word in catalog_conf:
@@ -158,6 +156,6 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
                     ),
                 ),
             )
-            locations.append(location)
+            return [location]
 
-    return locations if locations else None
+    return None
