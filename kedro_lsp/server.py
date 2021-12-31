@@ -140,10 +140,12 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
 
     catalog_paths = _path_lookup(
         conf_path=server.project_metadata.project_path / server.project_settings.CONF_ROOT,
-        patterns=["catalog*", "catalog*/**", "**/catalog*"]
+        patterns=["catalog*", "**/catalog*/**", "**/catalog*"],
     )
+
     for catalog_path in catalog_paths:
         catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
+
         if word in catalog_conf:
             line = catalog_conf[word]["__line__"]
             location = Location(
