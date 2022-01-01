@@ -1,4 +1,5 @@
 """Kedro Language Server."""
+import logging
 import re
 from typing import List, Optional
 
@@ -142,6 +143,7 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
         conf_path=server.project_metadata.project_path / server.project_settings.CONF_ROOT,
         patterns=["catalog*", "**/catalog*/**", "**/catalog*"],
     )
+    locations = []
 
     for catalog_path in catalog_paths:
         catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
@@ -158,6 +160,19 @@ def definition(server: KedroLanguageServer, params: TextDocumentPositionParams) 
                     ),
                 ),
             )
-            return [location]
+            locations.append(location)
+    
+    return locations or None
 
-    return None
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=2087)
+    args = parser.parse_args()
+    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
+    SERVER.start_tcp(args.host, args.port)
