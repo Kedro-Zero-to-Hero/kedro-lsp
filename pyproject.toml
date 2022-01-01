@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kedro-lsp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Kedro Language Server"
 authors = ["Lim Hoang <limdauto@gmail.com>"]
 readme = "README.md"
